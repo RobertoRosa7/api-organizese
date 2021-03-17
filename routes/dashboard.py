@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re
+import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re, base64
 
 sys.path.append(os.path.abspath(os.getcwd()))
 
@@ -378,6 +378,39 @@ def search():
     response.status_code = 200
 
     return response
+  except Exception as e:
+    return not_found(e)
+
+@dashboard.route('/update_user', methods=["POST", "GET"])
+@login_required
+def update_user():
+  try:
+    login_manager = LoginManager()
+    user = get_user()
+    if request.method == 'GET':
+      access = request.headers.get('Authorization')
+      access = access.split(':updateuser:')
+      old_password = base64.b64decode(access[0]).decode('ascii')
+      new_password = base64.b64decode(access[1]).decode('ascii')
+      check_pass = login_manager.check_password(old_password, user['password'])
+
+      if not check_pass:
+        return jsonify({'message':'Senha antiga não é a mesma que está salva'}), 400
+
+      password = login_manager.password_to_hash(new_password)
+      new_user = {**user, 'password': password, '_id': ObjectId(user['_id'])}
+
+      is_updated = db.collection_users.find_one_and_update({'email': user['email']}, {'$set': new_user})
+
+      if is_updated:
+        return jsonify({'message':'Senha atualizado com sucesso'}), 200
+      else:
+        return jsonify({'message':'Não foi possível alterar senha error interno'}), 400
+    
+    if request.method == 'POST':
+      print('update some informatios')
+
+    return jsonify({'message': 'Informações atualizadas!'}), 200
   except Exception as e:
     return not_found(e)
 

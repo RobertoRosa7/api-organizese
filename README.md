@@ -88,3 +88,8 @@
 * [x] Enviar email com token para reset password
 * [x] Atualizar nova senha
 * [x] Verificar se email existe para atualização
+
+###### 17/03/2021
+
+* [x] Deploy previa para produção no heroku
+* [x] Update user
