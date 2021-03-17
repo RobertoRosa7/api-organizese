@@ -1,1 +1,1 @@
-web: gunicorn run.py --log-file -
+web: python ryn.py runserver 0.0.0.0:5000
