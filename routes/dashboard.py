@@ -312,13 +312,13 @@ def delete_one():
   except Exception as e:
     return not_found(e)
 
-@dashboard.route('/get_status_code', methods=["GET"])
-def get_code():
-  try:
-    data = asyncio.run(get_status_code())
-    return str(json.dumps(data)), 200
-  except Exception as e:
-    return not_found(e)
+# @dashboard.route('/get_status_code', methods=["GET"])
+# def get_code():
+#   try:
+#     data = asyncio.run(get_status_code())
+#     return str(json.dumps(data)), 200
+#   except Exception as e:
+#     return not_found(e)
 
 
 # @dashboard.route('/set_dev_mode', methods=['POST'])
