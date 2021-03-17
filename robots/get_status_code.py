@@ -37,4 +37,4 @@ async def making_data(elements):
   return data
 
 
-asyncio.run(get_status_code())
+# asyncio.run(get_status_code())
