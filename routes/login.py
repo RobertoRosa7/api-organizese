@@ -36,29 +36,29 @@ def sign_in():
   access = request.headers.get('Authorization')
 
   if not access:
-    return jsonify({"message": 'e-mail e senha é obrigatório'}), 400
+    return jsonify({"message": 'e-mail e senha é obrigatório'}), 401
   
   access = access.split(':')
   access_email = base64.b64decode(access[0])
   access_pass = base64.b64decode(access[1])
   
   if not access_email or not access_pass:
-    return jsonify({"message": 'Campo e-mail é obrigatório'}), 400
+    return jsonify({"message": 'Campo e-mail é obrigatório'}), 404
   
   try:
     login_manager = LoginManager()
     user = db.collection_users.find_one({'email': access_email.decode('ascii')})
     
     if not user:
-      return jsonify({"message": 'E-mail não cadastrado'}), 400
+      return jsonify({"message": 'E-mail não cadastrado'}), 404
     
     check_pass = login_manager.check_password(access_pass.decode('ascii'), user['password'])
 
     if not check_pass:
-      return jsonify({"message": 'E-mail ou senha inválidos'}), 400
+      return jsonify({"message": 'E-mail ou senha inválidos'}), 401
 
     if not user['verified']:
-      return jsonify({"message": 'E-mail não foi verificado'}), 400
+      return jsonify({"message": 'E-mail não foi verificado'}), 401
 
     if isinstance(user['_id'], ObjectId):
       user['_id'] = str(user['_id'])

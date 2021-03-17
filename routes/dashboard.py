@@ -9,6 +9,7 @@ from enviroment.enviroment import db
 from robots.get_status_code import get_status_code
 from utils.gets import get_user
 from routes.auth import login_required
+from utils.LoginManager import LoginManager
 
 dashboard = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 
@@ -20,7 +21,7 @@ def build_evocucao(tipo, lists):
   build_categories = {}
   list_dates = []
   df = pd.read_json(lists)
-  df = df.drop(columns=['_id', 'position', 'description', 'user', 'edit', 'status', 'brand', 'updated_at'])
+  df = df.drop(columns=['_id','description', 'user', 'edit', 'status', 'brand', 'updated_at'])
 
   if tipo == 'despesas':
     coming = df.loc[df.type == 'outcoming']
@@ -216,17 +217,24 @@ def fetch_registers():
 @login_required
 def new_register():
   try:
+    user = get_user()
+    user_exists = db.collection_users.find_one({'email': user['email']})
+
+    if not user_exists:
+      return jsonify({'message': 'operação não permitida, usuário inválido!'}), 401
+
     payload = request.json
     data_now = int(time.time())
 
     if payload['created_at'] <= data_now:
       payload['status'] = 'done'
 
+    payload['user']['_id'] = user_exists['_id']
+    del payload['user']['id']
+
     db.collection_registers.insert(payload)
-    response = jsonify({'status':200, 'msg': 'Registro adicionado'})
-    response.status_code = 200
     
-    return response
+    return jsonify({'message': 'Registro adicionado'}), 200
   except Exception as e:
    return not_found(e)
 
@@ -255,26 +263,27 @@ def update_one():
     data_now = int(time.time())
 
     if not payload['_id']:
-      return str(json.dumps({'status':404, 'msg':"id é obrigatório"})), 404
+      return jsonify({'message':"id é obrigatório"}), 404
     
     find_id = ObjectId(payload['_id']['$oid'])
 
     payload['status'] = 'done' if payload['created_at'] <= data_now else 'pending'
-
     find_result = db.collection_registers.find_one({"_id": find_id})
+    payload['user']['_id'] = find_id
+
     if find_result != None and type(find_result) == dict:
       del payload['_id']
       result = db.collection_registers.update_one({"_id": find_id}, {"$set": payload})
 
       if result.modified_count > 0:
         data = db.collection_registers.find_one({"_id": find_id})
-        response = jsonify({'status':200, 'msg':'Um registro foi modificado', 'data': json.loads(dumps(data))})
+        response = jsonify({'message':'Um registro foi modificado', 'data': json.loads(dumps(data))})
         response.status_code = 200
         return response
       else:
-        return str(json.dumps({'status':200, 'msg': 'Nenhum registro foi modificado.'})), 200
+        return jsonify({'message': 'Nenhum registro foi modificado.'}), 200
     else:
-      return str(json.dumps({'status':404,"msg":"Registro não foi encontrado"})), 404
+      return jsonify({"message":"Registro não foi encontrado"}), 400
   except Exception as e:
     return not_found(e)
 
@@ -292,9 +301,10 @@ def delete_one():
     find_result = db.collection_registers.find_one({"_id": find_id})
 
     if find_result != None and type(find_result) == dict:
+      user = get_user()
       del payload['_id']
       db.collection_registers.delete_one({"_id": find_id})
-      result = list(db.collection_registers.find(making_filter(7, None)).sort('created_at', pymongo.DESCENDING))
+      result = list(db.collection_registers.find(making_filter(7, None, user)).sort('created_at', pymongo.DESCENDING))
       dumps_result = dumps(result)
       str_to_json = json.loads(dumps_result)
       data['consolidado'] = calcular_consolidado(str_to_json)
@@ -308,7 +318,7 @@ def delete_one():
 
       return response
     else:
-       return str(json.dumps({'status':404,"msg":"Registro não foi encontrado"})), 404
+       return jsonify({"message":"Registro não foi encontrado"}), 404
   except Exception as e:
     return not_found(e)
 
