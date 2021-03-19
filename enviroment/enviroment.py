@@ -4,7 +4,9 @@ sys.path.append(os.path.abspath(os.getcwd()))
 
 from pymongo import MongoClient
 
-API = 'http://localhost:4200' # frontend api
+# API = 'http://localhost:4200' # frontend api
+
+API = 'https://robertorosa7.github.io/web-organizese'
 
 PRIMEIROAPP_API_DEV = os.environ.get('PRIMEIROAPP_API_DEV')
 PRIMEIROAPP_API_PROD = os.environ.get('PRIMEIROAPP_API_PROD')
