@@ -21,7 +21,7 @@ def build_evocucao(tipo, lists):
   build_categories = {}
   list_dates = []
   df = pd.read_json(lists)
-  df = df.drop(columns=['_id','description', 'user', 'edit', 'status', 'brand', 'updated_at'])
+  df = df.drop(columns=['_id','description', 'user', 'edit', 'status', 'updated_at'])
 
   if tipo == 'despesas':
     coming = df.loc[df.type == 'outcoming']
@@ -153,24 +153,24 @@ def fetch_evolucao():
   except Exception as e:
     return not_found(e)
 
-@dashboard.route("/fetch_evolucao_detail", methods=["POST"])
-@login_required
-def fetch_evolucao_detail():
-  try:
-    data = {}
-    payload = request.get_json()
-    if not payload['_id']:
-      return str(json.dumps({'status':404, 'msg':"id é obrigatório"})), 404
+# @dashboard.route("/fetch_evolucao_detail", methods=["POST"])
+# @login_required
+# def fetch_evolucao_detail():
+#   try:
+#     data = {}
+#     payload = request.get_json()
+#     if not payload['_id']:
+#       return str(json.dumps({'status':404, 'msg':"id é obrigatório"})), 404
 
-    find_id = ObjectId(payload['_id']['$oid'])
-    find_result = db.collection_registers.find_one({"_id": find_id})
-    data = build_evocucao(dumps(find_result))
-    response = jsonify({'graph_evolution': data})
-    response.status_code = 200
+#     find_id = ObjectId(payload['_id']['$oid'])
+#     find_result = db.collection_registers.find_one({"_id": find_id})
+#     data = build_evocucao(dumps(find_result))
+#     response = jsonify({'graph_evolution': data})
+#     response.status_code = 200
 
-    return response
-  except Exception as e:
-    return not_found(e)
+#     return response
+#   except Exception as e:
+#     return not_found(e)
 
 @dashboard.route("/fetch_registers", methods=["GET"])
 @login_required
