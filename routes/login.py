@@ -57,8 +57,8 @@ def sign_in():
     if not check_pass:
       return jsonify({"message": 'E-mail ou senha inválidos'}), 401
 
-    if not user['verified']:
-      return jsonify({"message": 'E-mail não foi verificado'}), 401
+    # if not user['verified']:
+    #   return jsonify({"message": 'E-mail não foi verificado'}), 401
 
     if isinstance(user['_id'], ObjectId):
       user['_id'] = str(user['_id'])
