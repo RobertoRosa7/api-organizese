@@ -6,8 +6,8 @@ from pymongo import MongoClient
 
 # API = 'http://localhost:4200' # frontend api
 
-# API = 'https://robertorosa7.github.io/web-organizese'
-API = 'https://api-organizese.000webhostapp.com'
+API = 'https://robertorosa7.github.io/web-organizese'
+# API = 'https://api-organizese.000webhostapp.com'
 
 PRIMEIROAPP_API_DEV = os.environ.get('PRIMEIROAPP_API_DEV')
 PRIMEIROAPP_API_PROD = os.environ.get('PRIMEIROAPP_API_PROD')
