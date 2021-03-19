@@ -1,5 +1,9 @@
 import smtplib
 from email.mime.text import MIMEText
+import os
+
+API_EMAIL = os.environ.get('email')
+API_PASSWORD = os.environ.get('passwordo')
 
 class SendEmail(object):
 
@@ -7,18 +11,13 @@ class SendEmail(object):
     message_cont = template
     message = MIMEText(message_cont, 'html')
 
-    message['From'] = 'kakashi.kisura7@gmail.com'
+    message['From'] = API_EMAIL
     message['To'] = email
     message['Subject'] = 'Verificação de cadastro'
-
     msg_full = message.as_string()
-
-    # server = smtplib.SMTP('smtp.gamail.com:587')
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.starttls()
-    # server.login('apprendafixa@rendafixa.rocks', '281178')
-    # server.login('roberto.rosa7@gmail.com', 'Tnzro&ilyvigl2602')
-    server.login('kakashi.kisura7@gmail.com', 'Tnzro&ilyvigl2602')
+    server.login(API_EMAIL, API_PASSWORD)
     server.sendmail(message['From'], message['To'], msg_full)
     server.quit()
 
