@@ -100,7 +100,7 @@ def create_user():
     template = render_template('bem-vindo.html', token=token, api_url=API)
     is_sended = send_verify_email(template, user['email'])
 
-    if not is_sended:
+    if not is_sended['status']:
       return jsonify({'message': 'Não foi possível enviar email de validação'}), 400
 
     return jsonify({"message": 'Usuário cadastrado com sucesso'}), 201

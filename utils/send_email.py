@@ -21,6 +21,6 @@ def send_verify_email(template, email):
     server.sendmail(message['From'], message['To'], msg_full)
     server.quit()
     
-    return True
+    return {'status':True}
   except Exception as e:
-    return {'message': 'Error %s' % repr(e)}, 500
+    return {'message': 'Error %s' % repr(e), 'status':False}, 500
