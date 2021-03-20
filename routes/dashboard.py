@@ -9,13 +9,14 @@ from enviroment.enviroment import db
 from robots.get_status_code import get_status_code
 from utils.gets import get_user
 from routes.auth import login_required
-from utils.LoginManager import LoginManager
+from utils.login_manager import LoginManager
 
 dashboard = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 
 def clear_text(text):
   text.lower().replace(' ', '_').replace('&', 'e').replace('á','a').replace('ã','a').replace('ç','c').replace('õ','o')
   return text 
+
 
 def build_evocucao(tipo, lists):
   build_categories = {}
@@ -46,6 +47,7 @@ def build_evocucao(tipo, lists):
   build_categories['dates'] = list_dates
   return build_categories
 
+
 def calcular_consolidado(lists):
   consolidado = {}
   consolidado['total_credit'] = 0
@@ -72,6 +74,7 @@ def calcular_consolidado(lists):
   consolidado['total_consolidado'] += (consolidado['total_credit'] - consolidado['total_debit'])
   return consolidado
 
+
 def making_filter(days, todos, user):
   rangeDates = []
   filtered = {'user.email': user['email']}
@@ -84,8 +87,8 @@ def making_filter(days, todos, user):
       '$lte': time.time(), 
       '$gte': float(time.mktime(datetime.datetime.strptime(rangeDates[-1], "%Y-%m-%d").timetuple()))
     }
-
   return filtered
+
 
 def get_first_date(invs, salfer=False):
   dt_lower = time.time()
@@ -95,8 +98,8 @@ def get_first_date(invs, salfer=False):
 
     if dt_inv < dt_lower:
         dt_lower = dt_inv
-
   return int(dt_lower)
+
 
 def get_last_date(invs):
   last_date = None
@@ -111,11 +114,12 @@ def get_last_date(invs):
           last_date = current_date
         elif current_date > last_date:
           last_date = current_date
-
   return int(last_date)
+
 
 def convert_timestamp_to_string(timestamp):
   return time.strftime('%Y-%m-%d', time.localtime(timestamp))
+
 
 @dashboard.route("/fetch_evolucao_despesas", methods=["GET"])
 @login_required
@@ -130,10 +134,10 @@ def fetch_evolucao_despesas():
 
     response = jsonify({'graph_evolution': data})
     response.status_code = 200
-
     return response
   except Exception as e:
     return not_found(e)  
+
 
 @dashboard.route("/fetch_evolucao", methods=["GET"])
 @login_required
@@ -153,6 +157,7 @@ def fetch_evolucao():
   except Exception as e:
     return not_found(e)
 
+
 # @dashboard.route("/fetch_evolucao_detail", methods=["POST"])
 # @login_required
 # def fetch_evolucao_detail():
@@ -171,6 +176,7 @@ def fetch_evolucao():
 #     return response
 #   except Exception as e:
 #     return not_found(e)
+
 
 @dashboard.route("/fetch_registers", methods=["GET"])
 @login_required
@@ -213,6 +219,7 @@ def fetch_registers():
   except Exception as e:
     return not_found(e)
 
+
 @dashboard.route("/new_register", methods=["POST"])
 @login_required
 def new_register():
@@ -238,6 +245,7 @@ def new_register():
   except Exception as e:
    return not_found(e)
 
+
 @dashboard.route("/calc_consolidado", methods=["GET"])
 @login_required
 def calc_consolidado():
@@ -254,6 +262,7 @@ def calc_consolidado():
     return response
   except Exception as e:
     return not_found(e)
+
 
 @dashboard.route('/update_register', methods=['POST'])
 @login_required
@@ -286,6 +295,7 @@ def update_one():
       return jsonify({"message":"Registro não foi encontrado"}), 400
   except Exception as e:
     return not_found(e)
+
 
 @dashboard.route('/delete_register', methods=['POST'])
 @login_required
@@ -321,6 +331,7 @@ def delete_one():
        return jsonify({"message":"Registro não foi encontrado"}), 404
   except Exception as e:
     return not_found(e)
+
 
 # @dashboard.route('/get_status_code', methods=["GET"])
 # def get_code():
@@ -362,6 +373,7 @@ def get_list_autocomplete():
     return response
   except Exception as e:
     return not_found(e)
+
 
 @dashboard.route('/search', methods=["GET"])
 @login_required
@@ -413,6 +425,7 @@ def update_user():
     return jsonify({'message': 'Informações atualizadas!'}), 200
   except Exception as e:
     return not_found(e)
+
 
 @dashboard.errorhandler(500)
 def not_found(e=None):

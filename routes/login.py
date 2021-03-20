@@ -7,9 +7,9 @@ sys.path.append(os.path.abspath(os.getcwd()))
 
 from flask import Blueprint, jsonify, render_template, make_response
 from routes.auth import login_required
-from utils.LoginManager import LoginManager
+from utils.login_manager import LoginManager
 from enviroment.enviroment import db, API
-from utils.SendEmail import SendEmail
+from utils.send_email import send_verify_email
 from utils.gets import set_user, get_user
 from bson.json_util import ObjectId
 
@@ -92,16 +92,13 @@ def create_user():
     there_is_user = user_exists if user_exists else {}
 
     if 'password' in there_is_user:
-      return jsonify({'message': 'Usuário já cadastro'}), 401
+      return jsonify({'message': 'Usuário já cadastro'}), 400
       
-    user_temp = user
-    user_temp['_id'] = db.collection_users.insert_one(user).inserted_id
-    user_temp['_id'] = str(user_temp['_id'])
-    token = login_manager.generate_auth_token(user_temp, 600000).decode('ascii')
-    
-    template = render_template('bem-vindo.html', nome=user_temp['email'], token=token, api_url=API)
-    mail = SendEmail()
-    is_sended = mail.send_verify_email(template, user_temp['email'])
+    user['_id'] = db.collection_users.insert_one(user).inserted_id
+    user['_id'] = str(user['_id'])
+    token = login_manager.generate_auth_token(user, 600000).decode('ascii')
+    template = render_template('bem-vindo.html', token=token, api_url=API)
+    is_sended = send_verify_email(template, user['email'])
 
     if not is_sended:
       return jsonify({'message': 'Não foi possível enviar email de validação'}), 400
@@ -184,10 +181,9 @@ def email_to_reset():
   user_exists['_id'] = str(user_exists['_id'])
   token = login_manager.generate_auth_token(user_exists, 600000).decode('ascii')
   template = render_template('reset_password.html', email=user_exists['email'], token=token, api_url=API)
-  mail = SendEmail()
   
   try:
-    mail.send_verify_email(template, user_exists['email'])
+    send_verify_email(template, user_exists['email'])
     return {'message': 'Email de recuperação de senha enviado.'}, 200
   except Exception as e:
     return not_found(e)

@@ -1,16 +1,16 @@
+
+import os
 import smtplib
 from email.mime.text import MIMEText
-import os
 
 API_EMAIL = os.environ.get('email')
 API_PASSWORD = os.environ.get('password')
 
-class SendEmail(object):
 
-  def send_verify_email(self, template, email):
+def send_verify_email(template, email):
+  try:
     message_cont = template
     message = MIMEText(message_cont, 'html')
-
     message['From'] = API_EMAIL
     message['To'] = email
     message['Subject'] = 'Verificação de cadastro'
@@ -20,5 +20,7 @@ class SendEmail(object):
     server.login(API_EMAIL, API_PASSWORD)
     server.sendmail(message['From'], message['To'], msg_full)
     server.quit()
-
-    print('Email de verificação enviado')
+    
+    return True
+  except Exception as e:
+    return {'message': 'Error %s' % repr(e)}, 500
