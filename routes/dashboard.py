@@ -194,17 +194,17 @@ def fetch_registers():
       for i in range(len(str_to_json)):
         data['results'].append(str_to_json[i])
       
-      registers_list = list(db.collection_registers.find({}))
+      registers_list = list(db.collection_registers.find({'user.email': user['email']}))
       date_media = get_last_date(result) - get_first_date(registers_list)
 
       # total de dias entre o registro mais antigo e o mais recente
       data['days'] = math.ceil(date_media / (3600 * 24))
-
+      
       # convert timestamp to string
       # print(convert_timestamp_to_string(get_last_date(result)))
 
     data['total'] = len(str_to_json)
-    data['total_geral'] = db.collection_registers.count()
+    data['total_geral'] = db.collection_registers.find({'user.email':user['email']}).count()
       
     response = jsonify({'data': data})
     response.status_code = 200

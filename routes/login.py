@@ -93,15 +93,18 @@ def create_user():
 
     if 'password' in there_is_user:
       return jsonify({'message': 'Usuário já cadastro'}), 401
-    else:
-      user_temp = user
-      user_temp['_id'] = db.collection_users.insert_one(user).inserted_id
-
+      
+    user_temp = user
+    user_temp['_id'] = db.collection_users.insert_one(user).inserted_id
     user_temp['_id'] = str(user_temp['_id'])
     token = login_manager.generate_auth_token(user_temp, 600000).decode('ascii')
+    
     template = render_template('bem-vindo.html', nome=user_temp['email'], token=token, api_url=API)
     mail = SendEmail()
-    mail.send_verify_email(template, user_temp['email'])
+    is_sended = mail.send_verify_email(template, user_temp['email'])
+
+    if not is_sended:
+      return jsonify({'message': 'Não foi possível enviar email de validação'}), 400
 
     return jsonify({"message": 'Usuário cadastrado com sucesso'}), 201
   except Exception as e:

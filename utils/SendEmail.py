@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 import os
 
 API_EMAIL = os.environ.get('email')
-API_PASSWORD = os.environ.get('passwordo')
+API_PASSWORD = os.environ.get('password')
 
 class SendEmail(object):
 
