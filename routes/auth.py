@@ -23,13 +23,15 @@ def _check_password(username, password):
     user_exists = login_manager.verify_auth_token(token, db.collection_users)
     if user_exists:
       set_user('user', user_exists)
+    else:
+      return False
   return True
 
 
 def login_required(func):
   def __callback__(*args, **kwargs):
     if not get_user():
-      return jsonify({"status":401,"message":"Usuário ou senha inválido."}), 401
+      return jsonify({"message":"Usuário ou senha inválido."}), 401
     return func(*args, **kwargs)
   
   __callback__.__name__ = func.__name__

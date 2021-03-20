@@ -62,21 +62,10 @@ class LoginManager(TokenManager):
       return False
 
     try:
-      _id = data['_id']
-      user = collection.find_one({'_id': ObjectId(_id)})
+      user = collection.find_one({'_id': ObjectId(data['_id'])})
     except:
-      if type(data['id']) is str:
-        import json
-        _id = json.loads(data['id'])
-      else:
-        _id = data['id']
-      if '$oid' in _id:
-        user = collection.find_one({'_id': ObjectId(_id['$oid'])})
-      else:
-        user = collection.find_one({'_id': ObjectId(_id)})
+     return False
 
-    if user is None:
-      return None
     user['_id'] = str(user['_id'])
     return user if not purge_private else self._purge_private_data(user)
 

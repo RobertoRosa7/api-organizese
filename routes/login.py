@@ -57,16 +57,16 @@ def sign_in():
     if not check_pass:
       return jsonify({"message": 'E-mail ou senha inválidos'}), 401
 
-    # if not user['verified']:
-    #   return jsonify({"message": 'E-mail não foi verificado'}), 401
+    if not user['verified']:
+      return jsonify({"message": 'E-mail não foi verificado'}), 401
 
     if isinstance(user['_id'], ObjectId):
       user['_id'] = str(user['_id'])
-  
+
     token = login_manager.generate_auth_token(user)
     set_user('user', user)
   
-    return {'email': user['email'],'access_token': token.decode('ascii'),'id': str(user['_id'])}
+    return {'access_token': token.decode('ascii')}, 200
   except Exception as e:
     return not_found(e)
 

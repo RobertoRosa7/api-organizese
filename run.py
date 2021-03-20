@@ -15,6 +15,8 @@ from bson.json_util import dumps
 from routes.home import home
 from routes.dashboard import dashboard
 from routes.login import my_login
+from routes.profile import profile
+
 
 app = Flask(__name__)
 # app.secret_key = 'secretkey'
@@ -24,6 +26,7 @@ app = Flask(__name__)
 app.register_blueprint(my_login)
 app.register_blueprint(home)
 app.register_blueprint(dashboard)
+app.register_blueprint(profile)
 
 
 @app.route("/", methods=["GET"])
