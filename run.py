@@ -16,6 +16,7 @@ from routes.home import home
 from routes.dashboard import dashboard
 from routes.login import my_login
 from routes.profile import profile
+from routes.files import files
 
 
 app = Flask(__name__)
@@ -27,6 +28,7 @@ app.register_blueprint(my_login)
 app.register_blueprint(home)
 app.register_blueprint(dashboard)
 app.register_blueprint(profile)
+app.register_blueprint(files)
 
 
 @app.route("/", methods=["GET"])

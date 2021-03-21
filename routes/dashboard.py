@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re, base64
+import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re, base64, pprint
 
 sys.path.append(os.path.abspath(os.getcwd()))
 
-from flask import jsonify, request, Blueprint
+from flask import jsonify, Blueprint
+from flask.globals import request
 from bson.json_util import dumps, ObjectId
 from enviroment.enviroment import db
 from robots.get_status_code import get_status_code
@@ -228,19 +229,16 @@ def new_register():
     user_exists = db.collection_users.find_one({'email': user['email']})
 
     if not user_exists:
-      return jsonify({'message': 'operação não permitida, usuário inválido!'}), 401
+      return jsonify({'message': 'operação não permitida, token inválido!'}), 401
 
-    payload = request.json
+    payload = request.get_json()
     data_now = int(time.time())
 
     if payload['created_at'] <= data_now:
       payload['status'] = 'done'
 
-    payload['user']['_id'] = user_exists['_id']
-    del payload['user']['id']
-
+    payload['user']['_id'] = ObjectId(payload['user']['_id'])
     db.collection_registers.insert(payload)
-    
     return jsonify({'message': 'Registro adicionado'}), 200
   except Exception as e:
    return not_found(e)
