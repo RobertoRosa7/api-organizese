@@ -93,3 +93,10 @@
 
 * [x] Deploy previa para produção no heroku
 * [x] Update user
+
+###### 21/03/2021
+
+* [*] Endpoint para imagens
+* [] Implementar lista de download das release
+* [] Implementar endpoint para lista de release
+* [] Pegar User Agent do front para indicar qual sistema operacional baixar

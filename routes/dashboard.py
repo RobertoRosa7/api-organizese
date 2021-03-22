@@ -54,6 +54,8 @@ def calcular_consolidado(lists):
   consolidado['total_credit'] = 0
   consolidado['total_debit'] = 0
   consolidado['total_consolidado'] = 0
+  consolidado['percent_debit'] = 0
+  consolidado['percent_consolidado'] = 0
   consolidado['a_pagar'] = 0
   consolidado['a_receber'] = 0
 
@@ -73,6 +75,12 @@ def calcular_consolidado(lists):
             consolidado['a_pagar'] += float(lists[i]['value'])
 
   consolidado['total_consolidado'] += (consolidado['total_credit'] - consolidado['total_debit'])
+
+  if consolidado['total_consolidado'] > 0:
+    consolidado['percent_consolidado'] = (consolidado['total_consolidado'] / consolidado['total_credit'] ) * 100
+    consolidado['percent_debit'] = (consolidado['total_debit'] / consolidado['total_credit']) * 100
+    consolidado['percent_credit'] = (consolidado['percent_consolidado'] + consolidado['percent_debit'])
+  
   return consolidado
 
 
