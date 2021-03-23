@@ -52,12 +52,12 @@ def get_download_list():
     download_list = {}  
     linux_list = os.listdir(os.path.join(os.getcwd() + '/files/downloads/linux/'))
     win_list = os.listdir(os.path.join(os.getcwd() + '/files/downloads/windows/'))
-    mac_list = os.listdir(os.path.join(os.getcwd() + '/files/downloads/mac/'))
+    # mac_list = os.listdir(os.path.join(os.getcwd() + '/files/downloads/mac/'))
     
     props = {}
     arr_linux = []
     arr_win = []
-    arr_mac = []
+    # arr_mac = []
 
     for i in linux_list:
       arr_linux.append({
@@ -75,18 +75,18 @@ def get_download_list():
         'system':'windows'
       })
 
-    for i in mac_list:
-      arr_mac.append({
-        'version':i.split('_')[1],
-        'label': 'Mac OS',
-        'release':i,
-        'system':'mac'
-      })
+    # for i in mac_list:
+    #   arr_mac.append({
+    #     'version':i.split('_')[1],
+    #     'label': 'Mac OS',
+    #     'release':i,
+    #     'system':'mac'
+    #   })
 
 
     download_list['linux'] = arr_linux
     download_list['windows'] = arr_win
-    download_list['mac'] = arr_mac
+    # download_list['mac'] = arr_mac
     
     # pprint.pprint(arr_linux)
 
