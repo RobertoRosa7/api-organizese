@@ -284,7 +284,8 @@ def update_one():
 
     payload['status'] = 'done' if payload['created_at'] <= data_now else 'pending'
     find_result = db.collection_registers.find_one({"_id": find_id})
-    payload['user']['_id'] = find_id
+
+    payload['user']['_id'] = ObjectId(payload['user']['_id']['$oid'])
 
     if find_result != None and type(find_result) == dict:
       del payload['_id']
