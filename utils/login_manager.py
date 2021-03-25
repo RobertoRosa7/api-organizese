@@ -63,10 +63,10 @@ class LoginManager(TokenManager):
 
     try:
       user = collection.find_one({'_id': ObjectId(data['_id'])})
+      user['_id'] = str(user['_id'])
     except:
      return False
 
-    user['_id'] = str(user['_id'])
     return user if not purge_private else self._purge_private_data(user)
 
   # def verify_auth_token_for_assessor(self, token, collection):
