@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify
 from flask.globals import request
 from routes.auth import login_required
 from enviroment.enviroment import db
-from utils.gets import get_user
+from utils.gets import get_user, set_user
 from utils.login_manager import LoginManager
 
 profile = Blueprint("profile", __name__, url_prefix="/profile")
@@ -48,6 +48,38 @@ def profile_update():
     user_merge['_id'] = str(user_merge['_id'])
 
     return {**user_merge}, 200
+  except Exception as e:
+    return not_found(e)
+
+
+@profile.route("/delete/<id_user>", methods=["DELETE"])
+@login_required
+def get_delete(id_user):
+  try:
+    user_local = get_user()
+    is_del_register = False
+    is_del_user = False
+
+    if id_user != user_local['_id']:
+      return jsonify({'message':'Usuário não autenticado.'}), 401
+
+    user_db = db.collection_users.find_one({'email': user_local['email']})
+    
+    if not user_db:
+      return jsonify({'message': 'token inválido!'}), 401
+
+    is_del_user = db.collection_users.delete_one({'email': user_db['email']}).acknowledged
+
+    if is_del_user:
+      is_del_register = db.collection_registers.delete_many({'user.email': user_db['email']}).acknowledged
+    else:
+      return jsonify({'message': 'não foi possível deletar usuário.'}), 400
+
+    if is_del_register:
+      set_user('user', {})
+      return jsonify({'message': 'conta excluída.'}), 200
+    else: 
+      return {'message': 'não foi possível remover os registros.'}, 400
   except Exception as e:
     return not_found(e)
 
