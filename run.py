@@ -42,10 +42,32 @@ def health_check():
 
 @app.after_request
 def after_request(response):
-    response.headers.set('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Token,Avista-Token')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    # response.headers.add('Access-Control-Allow-Headers', 'Access-Control-Allow-Origin,Access-Control-Allow-Headers,Content-Type,Authorization,Token,Avista-Token,X-Requested-With')
+    response.headers.add("Access-Control-Allow-Headers", "Authorization, responseType, Token, Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
-    # response.headers.set('Access-Control-Allow-Credentials', 'true')
+    # response.headers.add('Access-Control-Allow-Credentials', 'true')
+    content_type = response.headers['content-type']
+    
+    if content_type == 'application/octet-stream':
+      return request.data
+
+    # if content_type == 'application/json':
+    #     request_json = request.get_json(silent=True)
+    #     if request_json and 'name' in request_json:
+    #         name = request_json['name']
+    #     else:
+    #         raise ValueError("JSON is invalid, or missing a 'name' property")
+    # elif content_type == 'application/octet-stream':
+    #     name = request.data
+    # elif content_type == 'text/plain':
+    #     name = request.data
+    # elif content_type == 'application/x-www-form-urlencoded':
+    #     name = request.form.get('name')
+    # else:
+    #     raise ValueError("Unknown content type: {}".format(content_type))
+    # return 'Hello {}!'.format(escape(name))
+
     return response
 
 

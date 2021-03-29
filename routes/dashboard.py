@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re, base64, pprint
+import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re, base64, pprint, magic
 
 sys.path.append(os.path.abspath(os.getcwd()))
 
-from flask import jsonify, Blueprint
+from flask import jsonify, Blueprint, send_file
 from flask.globals import request
 from bson.json_util import dumps, ObjectId
 from enviroment.enviroment import db
@@ -59,17 +59,18 @@ def calcular_consolidado(lists):
   consolidado['a_pagar'] = 0
   consolidado['a_receber'] = 0
 
-  data_now = int(time.time())
+  date_to_calc = int(time.time())
+  # date_to_calc = int(time.mktime(datetime.datetime.strptime((datetime.date.today() - datetime.timedelta(1)).isoformat(), "%Y-%m-%d").timetuple()))
 
   if len(lists) > 0:
     for i in range(len(lists)):
       if lists[i]['type'] == 'incoming':
-        if lists[i]['created_at'] <= data_now:
+        if lists[i]['created_at'] < date_to_calc:
           consolidado['total_credit'] += float(lists[i]['value'])
         if lists[i]['status'] == 'pending':
             consolidado['a_receber'] += float(lists[i]['value'])
       elif lists[i]['type'] == 'outcoming':
-          if lists[i]['created_at'] <= data_now:
+          if lists[i]['created_at'] < date_to_calc:
             consolidado['total_debit'] += float(lists[i]['value'])
           if lists[i]['status'] == 'pending':
             consolidado['a_pagar'] += float(lists[i]['value'])
@@ -91,11 +92,12 @@ def making_filter(days, todos, user):
   for i in range(0, days):
     rangeDates.append((datetime.date.today() - datetime.timedelta(i)).isoformat())
 
-  if todos == None:
+  if not todos:
     filtered['created_at'] = {
       '$lte': time.time(), 
       '$gte': float(time.mktime(datetime.datetime.strptime(rangeDates[-1], "%Y-%m-%d").timetuple()))
     }
+
   return filtered
 
 
@@ -195,7 +197,9 @@ def fetch_registers():
     days = request.args.get('days', default=7, type=int)
     todos = request.args.get('todos', default=None, type=str)
     data = {'results': [] }
+
     result = list(db.collection_registers.find(making_filter(days, todos, user)).sort('created_at', pymongo.DESCENDING))
+    # result = list(db.collection_registers.find({'user.email':user['email']}).sort('created_at', pymongo.DESCENDING))
     
     # result = list(db.collection_registers.find({}).sort('created_at', pymongo.DESCENDING))
     # user = db.collection_users.find_one({'email':'roberto.rosa7@gmail.com'})
@@ -209,14 +213,15 @@ def fetch_registers():
       for i in range(len(str_to_json)):
         data['results'].append(str_to_json[i])
       
-      registers_list = list(db.collection_registers.find({'user.email': user['email']}))
-      date_media = get_last_date(result) - get_first_date(registers_list)
+      if not todos:
+        registers_list = list(db.collection_registers.find({'user.email': user['email']}))
+        date_media = get_last_date(result) - get_first_date(registers_list)
 
-      # total de dias entre o registro mais antigo e o mais recente
-      data['days'] = math.ceil(date_media / (3600 * 24))
-      
-      # convert timestamp to string
-      # print(convert_timestamp_to_string(get_last_date(result)))
+        # total de dias entre o registro mais antigo e o mais recente
+        data['days'] = math.ceil(date_media / (3600 * 24))
+        
+        # convert timestamp to string
+        # print(convert_timestamp_to_string(get_last_date(result)))
 
     data['total'] = len(str_to_json)
     data['total_geral'] = db.collection_registers.find({'user.email':user['email']}).count()
@@ -242,7 +247,7 @@ def new_register():
     payload = request.get_json()
     data_now = int(time.time())
 
-    if payload['created_at'] <= data_now:
+    if payload['created_at'] < data_now:
       payload['status'] = 'done'
 
     payload['user']['_id'] = ObjectId(payload['user']['_id'])
@@ -430,6 +435,57 @@ def update_user():
       print('update some informatios')
 
     return jsonify({'message': 'Informações atualizadas!'}), 200
+  except Exception as e:
+    return not_found(e)
+
+
+@dashboard.route('/excel', methods=["POST"])
+@login_required
+def excel():
+  login_manager = LoginManager()
+  user = get_user()
+  
+  df = pd.read_json(json.dumps(request.get_json()['to_excel']))
+
+  # drop all columns except 
+  df = df.loc[:, df.columns.intersection(['category', 'created_at', 'description', 'type', 'value'])]
+  # df = df.drop(df.columns.difference(['category', 'created_at', 'description', 'type', 'value']), 1, inplace=True)
+  
+  in_coming = df.loc[df['type'] == 'entrada']
+  out_coming = df.loc[df['type'] == 'saida']
+  total_incoming = 0
+  total_outcoming = 0
+  
+  if len(in_coming) > 0:
+    df['in'] = df.loc[df['type'] == 'entrada', ['value']]
+    df['in'].fillna(0, inplace=True)
+    total_incoming = df['in'].sum()
+
+  if len(out_coming) > 0:
+    df['out'] = df.loc[df['type'] == 'saida', ['value']]
+    df['out'].fillna(0, inplace=True)
+    total_outcoming = df['out'].sum()
+
+  total = (total_incoming - total_outcoming)
+
+  translate_columns = {'category':'categoria', 'created_at':'data', 'description':'descrição', 'type':'tipo', 'value':'valor'}
+  default_columns = ['categoria', 'data', 'descrição', 'tipo', 'valor', 'in', 'out']
+
+  try:
+    df2 = df.rename(columns=translate_columns, inplace=False)
+    df2['data'] = df2['data'].apply(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d')).astype(str)
+    df3 = pd.DataFrame([['', '', 'Total Geral','', total, '', '']], columns=default_columns)
+    df4 = df2.append(df3, ignore_index=True).drop(columns=['in', 'out'])
+
+    # df2_tidy = df3.rename(columns = tanslate_columns, inplace = False)
+    # df2_tidy['data'] = df2_tidy['data'].apply(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d'))
+
+    file = 'files/downloads/excel/organizese.xlsx'
+    df4.to_excel(file, index=False)
+    mime = magic.from_file(file, mime=True)
+
+    return send_file(file, mimetype=mime, attachment_filename=file, as_attachment=True), 200
+    # return jsonify({'message': 'Informações atualizadas!'}), 200
   except Exception as e:
     return not_found(e)
 
