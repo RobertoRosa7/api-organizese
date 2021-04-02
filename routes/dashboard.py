@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
-import os, sys, json, asyncio, pymongo, datetime, time, pandas as pd, math, re, base64, pprint, magic
+import os
+import sys
+import json
+import pymongo
+import datetime
+import time
+import pandas as pd
+import math
+import base64
+import magic
+import numpy as np
+import operator
 
 sys.path.append(os.path.abspath(os.getcwd()))
 
@@ -11,6 +22,7 @@ from robots.get_status_code import get_status_code
 from utils.gets import get_user
 from routes.auth import login_required
 from utils.login_manager import LoginManager
+from itertools import accumulate
 
 dashboard = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 
@@ -130,6 +142,28 @@ def get_last_date(invs):
 
 def convert_timestamp_to_string(timestamp):
   return time.strftime('%Y-%m-%d', time.localtime(timestamp))
+
+
+@dashboard.route('/fetch_graph_category', methods=["GET"])
+@login_required
+def fetch_graph_category():
+  try:
+    user = get_user()
+
+    results = list(db.collection_registers.find({'user.email': user['email']}))
+
+    df = pd.read_json(dumps(results))
+    df = df.loc[:, df.columns.intersection(['category', 'created_at', 'type', 'value'])]
+    df = df.groupby(['category','type'])['value'].sum().reset_index()
+    df = df.loc[df.type == 'outcoming']
+
+    total_received = df.loc[df.type == 'outcoming']['value'].sum()
+
+    df['each_percent'] = pd.DataFrame((df.value / total_received) * 100)
+
+    return jsonify(df.drop(columns=["type", 'value']).to_dict()), 200
+  except Exception as e:
+    return not_found(e)
 
 
 @dashboard.route("/fetch_evolucao_despesas", methods=["GET"])
