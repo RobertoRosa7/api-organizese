@@ -144,6 +144,22 @@ def convert_timestamp_to_string(timestamp):
   return time.strftime('%Y-%m-%d', time.localtime(timestamp))
 
 
+@dashboard.route('/fetch_start_end_date', methods=["GET"])
+def fetch_start_end_date():
+  try:
+    range_dates = []
+
+    for i in range(0, 30):
+      range_dates.append((datetime.date.today() - datetime.timedelta(i)).isoformat())
+
+    dt_end = convert_timestamp_to_string(time.time())
+    dt_start = range_dates[-1]
+
+    return jsonify({'dt_start': dt_start, 'dt_end': dt_end}), 200
+  except Exception as e:
+    return not_found(e)
+
+
 @dashboard.route('/fetch_graph_category', methods=["GET"])
 @login_required
 def fetch_graph_category():
@@ -152,16 +168,19 @@ def fetch_graph_category():
 
     results = list(db.collection_registers.find({'user.email': user['email']}))
 
-    df = pd.read_json(dumps(results))
-    df = df.loc[:, df.columns.intersection(['category', 'created_at', 'type', 'value'])]
-    df = df.groupby(['category','type'])['value'].sum().reset_index()
-    df = df.loc[df.type == 'outcoming']
+    if len(results) > 0:
+      df = pd.read_json(dumps(results))
+      df = df.loc[:, df.columns.intersection(['category', 'created_at', 'type', 'value'])]
+      df = df.groupby(['category','type'])['value'].sum().reset_index()
+      df = df.loc[df.type == 'outcoming']
 
-    total_received = df.loc[df.type == 'outcoming']['value'].sum()
+      total_received = df.loc[df.type == 'outcoming']['value'].sum()
 
-    df['each_percent'] = pd.DataFrame((df.value / total_received) * 100)
+      df['each_percent'] = pd.DataFrame((df.value / total_received) * 100)
 
-    return jsonify(df.drop(columns=["type", 'value']).to_dict()), 200
+      return jsonify(df.drop(columns=["type", 'value']).to_dict()), 200
+    else:
+      return jsonify({'category': {}, 'each_percent': {}})
   except Exception as e:
     return not_found(e)
 

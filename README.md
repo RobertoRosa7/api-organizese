@@ -97,6 +97,10 @@
 ###### 21/03/2021
 
 * [*] Endpoint para imagens
-* [] Implementar lista de download das release
-* [] Implementar endpoint para lista de release
-* [] Pegar User Agent do front para indicar qual sistema operacional baixar
+* [x] Implementar lista de download das release
+* [x] Implementar endpoint para lista de release
+* [x] Pegar User Agent do front para indicar qual sistema operacional baixar
+
+###### 03/04/2021
+
+* [] Implementar json com hash dos dados dos graficos
