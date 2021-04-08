@@ -160,16 +160,41 @@ def fetch_start_end_date():
     return not_found(e)
 
 
+@dashboard.route('/fetch_lastdate_outcome', methods=["GET"])
+@login_required
+def fetch_lastdate_outcome():
+  try:
+    user = get_user()
+    results = list(db.collection_registers.find({'user.email': user['email']}))
+    dt_start = ''
+
+    if len(results) > 0:
+      dt_start = convert_timestamp_to_string(get_first_date(results))
+
+    return jsonify({'dt_start': dt_start}), 200
+  except Exception as e:
+    return not_found(e)
+
+
 @dashboard.route('/fetch_graph_category', methods=["GET"])
 @login_required
 def fetch_graph_category():
   try:
     user = get_user()
+    # results = list(db.collection_registers.find({'user.email': user['email']}))
+    
+    dt_start = request.args.get('dt_start', default=None, type=str)
+    dt_end = request.args.get('dt_end', default=None, type=str)
 
-    results = list(db.collection_registers.find({'user.email': user['email']}))
+    # result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
+    if not dt_start and not dt_end:
+      result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
+    else:
+      filtered = {'user.email': user['email'], 'created_at': {'$lte': float(dt_end), '$gte': float(dt_start)}}
+      result = list(db.collection_registers.find(filtered).sort('created_at', pymongo.ASCENDING))
 
-    if len(results) > 0:
-      df = pd.read_json(dumps(results))
+    if len(result) > 0:
+      df = pd.read_json(dumps(result))
       df = df.loc[:, df.columns.intersection(['category', 'created_at', 'type', 'value'])]
       df = df.groupby(['category','type'])['value'].sum().reset_index()
       df = df.loc[df.type == 'outcoming']
@@ -191,8 +216,17 @@ def fetch_evolucao_despesas():
   try:
     user = get_user()
     data = {}
-    result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
+    dt_start = request.args.get('dt_start', default=None, type=str)
+    dt_end = request.args.get('dt_end', default=None, type=str)
+
+    # result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
     
+    if not dt_start and not dt_end:
+      result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
+    else:
+      filtered = {'user.email': user['email'], 'created_at': {'$lte': float(dt_end), '$gte': float(dt_start)}}
+      result = list(db.collection_registers.find(filtered).sort('created_at', pymongo.ASCENDING))
+
     if len(result) > 0:
       data = build_evocucao('despesas', dumps(result))
 
@@ -209,15 +243,20 @@ def fetch_evolucao():
   try:
     user = get_user()
     data = {}
-    result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
+
+    dt_start = request.args.get('dt_start', default=None, type=str)
+    dt_end = request.args.get('dt_end', default=None, type=str)
     
+    if not dt_start and not dt_end:
+      result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
+    else:
+      filtered = {'user.email': user['email'], 'created_at': {'$lte': float(dt_end), '$gte': float(dt_start)}}
+      result = list(db.collection_registers.find(filtered).sort('created_at', pymongo.ASCENDING))
+
     if len(result) > 0:
       data = build_evocucao('receita', dumps(result))
     
-    response = jsonify({'graph_evolution': data})
-    response.status_code = 200
-
-    return response
+    return jsonify({'graph_evolution': data}), 200
   except Exception as e:
     return not_found(e)
 
@@ -267,6 +306,7 @@ def fetch_registers():
         data['results'].append(str_to_json[i])
       
       if not todos:
+        # usado pra calcular o periodo de dias
         registers_list = list(db.collection_registers.find({'user.email': user['email']}))
         date_media = get_last_date(result) - get_first_date(registers_list)
 
@@ -283,6 +323,43 @@ def fetch_registers():
     response.status_code = 200
 
     return response
+  except Exception as e:
+    return not_found(e)
+
+
+@dashboard.route("/fetch_registers_to_dashboard", methods=["GET"])
+@login_required
+def fetch_registers_to_dashboard():
+  user = get_user()
+  data = {'results': [] }
+
+  dt_start = request.args.get('dt_start', default=None, type=str)
+  dt_end = request.args.get('dt_end', default=None, type=str)
+  
+  try:
+    if not dt_start and not dt_end:
+      result = list(db.collection_registers.find({'user.email': user['email']}).limit(10).sort('created_at', pymongo.ASCENDING))
+    else:
+      filtered = {'user.email': user['email'], 'created_at': {'$lte': float(dt_end), '$gte': float(dt_start)}}
+      result = list(db.collection_registers.find(filtered).limit(10).sort('created_at', pymongo.ASCENDING))
+
+    if len(result) > 0:
+      dumps_result = dumps(result)
+      str_to_json = json.loads(dumps_result)
+      data['consolidado'] = calcular_consolidado(str_to_json)
+
+      for i in range(len(str_to_json)):
+        data['results'].append(str_to_json[i])
+      
+      # usado pra calcular o periodo de dias
+      registers_list = list(db.collection_registers.find({'user.email': user['email']}))
+      date_media = get_last_date(result) - get_first_date(registers_list)
+      data['days'] = math.ceil(date_media / (3600 * 24))
+
+    data['total'] = len(str_to_json)
+    data['total_geral'] = db.collection_registers.find({'user.email':user['email']}).count()
+      
+    return jsonify({'data': data}), 200
   except Exception as e:
     return not_found(e)
 
