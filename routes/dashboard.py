@@ -398,12 +398,11 @@ def fetch_registers():
 def fetch_registers_to_dashboard():
     user = get_user()
     data = {"results": []}
-
     try:
         result = list(
             db.collection_registers.find({"user.email": user["email"]})
+            .sort("created_at", pymongo.DESCENDING)
             .limit(10)
-            .sort("created_at", pymongo.ASCENDING)
         )
         if len(result) > 0:
             dumps_result = dumps(result)
