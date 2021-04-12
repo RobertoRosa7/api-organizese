@@ -202,14 +202,11 @@ def fetch_lastdate_outcome():
 @dashboard.route("/fetch_graph_category", methods=["GET"])
 @login_required
 def fetch_graph_category():
+    user = get_user()
+    dt_start = request.args.get("dt_start", default=None, type=str)
+    dt_end = request.args.get("dt_end", default=None, type=str)
+
     try:
-        user = get_user()
-        # results = list(db.collection_registers.find({'user.email': user['email']}))
-
-        dt_start = request.args.get("dt_start", default=None, type=str)
-        dt_end = request.args.get("dt_end", default=None, type=str)
-
-        # result = list(db.collection_registers.find({'user.email': user['email']}).sort('created_at', pymongo.ASCENDING))
         if not dt_start and not dt_end:
             result = list(
                 db.collection_registers.find({"user.email": user["email"]}).sort(
@@ -232,16 +229,31 @@ def fetch_graph_category():
             df = df.loc[
                 :, df.columns.intersection(["category", "created_at", "type", "value"])
             ]
+
+            # dates = df["created_at"].apply(
+            #     lambda x: pd.Timestamp(x).strftime("%Y-%m-%d")
+            # )
+
             df = df.groupby(["category", "type"])["value"].sum().reset_index()
             df = df.loc[df.type == "outcoming"]
 
             total_received = df.loc[df.type == "outcoming"]["value"].sum()
 
-            df["each_percent"] = pd.DataFrame((df.value / total_received) * 100)
-
-            return jsonify(df.drop(columns=["type", "value"]).to_dict()), 200
+            if total_received > 0:
+                df["each_percent"] = pd.DataFrame((df.value / total_received) * 100)
+                df["total"] = pd.DataFrame(df.value)
+                return (
+                    jsonify(df.drop(columns=["type", "value"]).fillna("").to_dict()),
+                    200,
+                )
+            else:
+                return jsonify(
+                    {"category": {}, "each_percent": {}, "total": {}, "dates": {}}
+                )
         else:
-            return jsonify({"category": {}, "each_percent": {}})
+            return jsonify(
+                {"category": {}, "each_percent": {}, "total": {}, "dates": {}}
+            )
     except Exception as e:
         return not_found(e)
 
