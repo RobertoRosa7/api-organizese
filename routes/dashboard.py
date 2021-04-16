@@ -354,19 +354,19 @@ def fetch_evolucao():
 @dashboard.route("/fetch_registers", methods=["GET"])
 @login_required
 def fetch_registers():
-    try:
-        user = get_user()
-        days = request.args.get("days", default=7, type=int)
-        todos = request.args.get("todos", default=None, type=str)
-        data = {"results": []}
+    user = get_user()
+    days = request.args.get("days", default=7, type=int)
+    todos = request.args.get("todos", default=None, type=str)
+    data = {"results": []}
 
+    try:
         result = list(
             db.collection_registers.find(making_filter(days, todos, user)).sort(
                 "created_at", pymongo.DESCENDING
             )
         )
-        # result = list(db.collection_registers.find({'user.email':user['email']}).sort('created_at', pymongo.DESCENDING))
 
+        # result = list(db.collection_registers.find({'user.email':user['email']}).sort('created_at', pymongo.DESCENDING))
         # result = list(db.collection_registers.find({}).sort('created_at', pymongo.DESCENDING))
         # user = db.collection_users.find_one({'email':'roberto.rosa7@gmail.com'})
         # is_update = db.collection_registers.update_many({}, {'$set': {'user': user}})
@@ -385,10 +385,8 @@ def fetch_registers():
                     db.collection_registers.find({"user.email": user["email"]})
                 )
                 date_media = get_last_date(result) - get_first_date(registers_list)
-
                 # total de dias entre o registro mais antigo e o mais recente
                 data["days"] = math.ceil(date_media / (3600 * 24))
-
                 # convert timestamp to string
                 # print(convert_timestamp_to_string(get_last_date(result)))
 
@@ -397,10 +395,9 @@ def fetch_registers():
             {"user.email": user["email"]}
         ).count()
 
-        response = jsonify({"data": data})
-        response.status_code = 200
-
-        return response
+        return jsonify({"data": data}), 200
+        # response.status_code = 200
+        # return response
     except Exception as e:
         return not_found(e)
 
