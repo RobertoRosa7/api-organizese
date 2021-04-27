@@ -331,24 +331,44 @@ def fetch_evolucao():
         return not_found(e)
 
 
-# @dashboard.route("/fetch_evolucao_detail", methods=["POST"])
-# @login_required
-# def fetch_evolucao_detail():
-#   try:
-#     data = {}
-#     payload = request.get_json()
-#     if not payload['_id']:
-#       return str(json.dumps({'status':404, 'msg':"id é obrigatório"})), 404
+@dashboard.route("/fetch_graph_outcome_income", methods=["GET"])
+@login_required
+def fetch_outcome_income():
+    user = get_user()
+    data = []
+    dt_start = request.args.get("dt_start", default=None, type=str)
+    dt_end = request.args.get("dt_end", default=None, type=str)
 
-#     find_id = ObjectId(payload['_id']['$oid'])
-#     find_result = db.collection_registers.find_one({"_id": find_id})
-#     data = build_evocucao(dumps(find_result))
-#     response = jsonify({'graph_evolution': data})
-#     response.status_code = 200
+    if not dt_start and not dt_end:
+        result = list(
+            db.collection_registers.find({"user.email": user["email"]}).sort(
+                "created_at", pymongo.ASCENDING
+            )
+        )
+    else:
+        filtered = {
+            "user.email": user["email"],
+            "created_at": {"$lte": float(dt_end), "$gte": float(dt_start)},
+        }
+        result = list(
+            db.collection_registers.find(filtered).sort("created_at", pymongo.ASCENDING)
+        )
 
-#     return response
-#   except Exception as e:
-#     return not_found(e)
+    if len(result) > 0:
+        df = pd.read_json(dumps(result))
+        df = df.loc[:, df.columns.intersection(["created_at", "type", "value"])]
+        df = (
+            pd.DataFrame(df.groupby(["created_at", "type"]).sum()["value"])
+            .unstack(fill_value=0)["value"]
+            .to_dict()
+        )
+        for k in df.keys():
+            data.append(
+                {"name": k, "dates": list(df[k].keys()), "values": list(df[k].values())}
+            )
+    else:
+        return {}
+    return jsonify({"outcome_income": data}), 200
 
 
 @dashboard.route("/fetch_registers", methods=["GET"])
@@ -566,29 +586,6 @@ def delete_one():
             return jsonify({"message": "Registro não foi encontrado"}), 404
     except Exception as e:
         return not_found(e)
-
-
-# @dashboard.route('/get_status_code', methods=["GET"])
-# def get_code():
-#   try:
-#     data = asyncio.run(get_status_code())
-#     return str(json.dumps(data)), 200
-#   except Exception as e:
-#     return not_found(e)
-
-
-# @dashboard.route('/set_dev_mode', methods=['POST'])
-# def set_dev_mode():
-#   try:
-#     data = request.get_json()
-#     mode = True if data['mode'] == 'dev-mode' else False
-#     text = 'dev-mode' if res else 'prod-mode'
-
-#     response = jsonify({'mode': text})
-
-#     return response, 200
-#   except Exception as e:
-#     return not_found(e)
 
 
 @dashboard.route("/get_list_autocomplete", methods=["GET"])
