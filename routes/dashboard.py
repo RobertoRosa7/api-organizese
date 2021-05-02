@@ -367,7 +367,7 @@ def fetch_outcome_income():
                 {"name": k, "dates": list(df[k].keys()), "values": list(df[k].values())}
             )
     else:
-        return {}
+        return jsonify({"outcome_income": [{"name": "", "dates": [], "values": []}]})
     return jsonify({"outcome_income": data}), 200
 
 
